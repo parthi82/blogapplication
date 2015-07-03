@@ -1,0 +1,8 @@
+*.jar
+.classpath
+.project
+.settings
+*.class
+*.properties
+META-INF
+appengine-generated

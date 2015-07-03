@@ -1,0 +1,186 @@
+<html>
+    <head>
+        
+        <script src="jquery-1.11.3.min.js"></script>
+        <script src="underscore.js"></script>
+        <script src="backbone.js"></script>
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+        
+        <script type='text/template' id='post-title'>
+           
+             <a><%- title %></a>
+           
+        </script>
+        
+        <script>
+             
+            <!-- Model -->
+                
+            var PostModel = Backbone.Model.extend({
+                defaults: {
+                    "title": "",
+                    "postTxt":""
+                }
+            });
+            
+            <!-- Collection -->
+            
+            var PostCollection = Backbone.Collection.extend({
+			    url: '/UserPosts',
+			    model: PostModel
+			});
+            
+            <!-- Views -->
+            
+            var PostModelView = Backbone.View.extend({
+                //model: new PostModel(),
+                tagName: 'li',
+                template: _.template($('#post-title').html()),
+                initialize: function() {
+                    console.log('Initialized PostModelView........');
+                },
+                events: {
+ 				   'click a' : 'showPost',
+                   'click p': 'enableEdit',
+ 			    },
+ 			    showPost: function(){
+                    
+                    console.log('click <a> event running showPost()');
+                   // elementId = '#' + this.model.id;
+                   // var element = $(elementId).html();
+                    var element = this.$('div').html();
+                    if(!element) {
+                        //$(elementId).html('<p>' + this.model.get('postTxt') + '</p>');
+                        this.$('div').append('<p>' + this.model.get('postTxt') + '</p>');
+                        console.log('populated postTxt into div > p .........');
+                    }
+                    else {
+                        //$(elementId).slideToggle( 'slow' );
+                        this.$('div').slideToggle( 'slow' );
+                    }
+ 			    },
+                enableEdit: function() {
+                    console.log('click <p> event running enableEdit()....');
+                    //elementId = '#' + this.model.id + ' p' ;
+                    this.$('p').attr('contenteditable', 'true'); 
+                },
+                render: function() {
+                    console.log('Running render() of PostModelView.....');
+                    var htmloutput = this.template(this.model.toJSON());
+                    this.$el.html(htmloutput);
+                    //var divTag = document.createElement('div');
+                    //divTag.setAttribute('id', String(this.model.id));
+                    this.$el.append('<div></div>');
+                    return this;
+                }
+            });
+            
+            var postcollection = new PostCollection();
+            
+            var PostCollectionView = Backbone.View.extend({
+                el: '#postcontainer',
+                initialize: function() {
+                    console.log('Initialized PostCollectionView .......');
+                    this.collection.on('add', this.render, this);
+				    this.collection.on('remove', this.render, this);
+                    console.log('postcollectionview $el: ' + this.$el.html());
+                },
+                
+                render: function() {
+                    
+                  this.$el.html('');
+                  this.collection.each(function(postmodel) {
+                      console.log(JSON.stringify(postmodel));
+                      postmodelview = new PostModelView({model: postmodel});
+                      console.log(JSON.stringify(postmodelview));
+                      //var htmlout = postmodelview.render().$el;
+                      // var htmlout = this.$el.append(postmodelview.render().$el);
+                      this.$el.append(postmodelview.render().$el);
+                      //$('#postcontainer').html('');
+                      //$('#postcontainer').append(htmlout);
+                      //this.$el.append(htmlout);
+                       
+                  },this);
+                    
+                  return this;
+                  
+                }
+            });
+            
+            
+            
+            function createPost() {
+                
+		        var postcollectionview = new PostCollectionView({collection: postcollection});
+				console.log('running creatPost()');
+                var postmodel = new PostModel({ title: $('#title').val(), postTxt: $('#postTxt').val() });
+				postcollection.create(postmodel);
+				console.log("postcollection: " + JSON.stringify(postcollection.toJSON()));
+				$('#title').val('');
+				$('#postTxt').val('');
+			
+		   }
+             
+        </script>
+         
+        <style></style> 
+        <style>
+            
+           ul {
+                list-style: none;
+           }
+            
+           a {
+               color:cornflowerblue;
+               font-family: sans-serif;
+               font-size: 20px;
+           }
+            
+           a:hover {
+               color:lightskyblue;
+               text-decoration: none;
+           }
+           
+           a:active {
+               color:lightcyan;
+           }
+                 
+          li {
+              margin-top: 20px;
+          }
+            
+          li div  {
+               background-color:aliceblue;
+               font-family: cursive;
+               width:1000px;
+           }
+            
+           li div p {
+               font-size: 18px;
+           }
+           
+           #postcontainer {
+           }
+        
+            
+        </style>
+        
+    </head>
+    
+    <body>
+        
+         <input id="title" name="title" placeholder="Choose a title"></input>
+		 </br>
+		 </br>
+         <textarea id="postTxt" name="postTxt" placeholder="Enter content of the post"></textarea>
+		 
+		 </br>
+         <button onclick="createPost()">Post</button>
+         <hr/>
+
+		 <ul id="postcontainer">     
+		 </ul>
+         
+    </body>
+</html>

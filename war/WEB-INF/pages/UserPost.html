@@ -1,0 +1,116 @@
+<html>
+  <head>
+        <script src="jquery-1.11.3.min.js"></script>
+        <script src="underscore.js"></script>
+        <script src="backbone.js"></script>
+		
+		
+		
+		<script type="text/template" id="posttemplate">
+           
+          <div class="container"> 
+                
+                <a> Title: <%- title %> </a> 
+                <div class="container">
+                 post: <%- postTxt %>
+                </div>
+
+          </div>
+
+        </script>
+
+        <script>
+             
+			var PostModel = Backbone.Model.extend({
+			    defaults: {
+				   "title": "",
+				   "postTxt": ""
+				}
+			});
+			
+			var PostCollection = Backbone.Collection.extend({
+			    url: '/createUserPost',
+			    model: PostModel
+			});
+			
+			var postcollection = new PostCollection();
+			
+            var PostView = Backbone.View.extend({
+			   model: postcollection,
+			   el: '#postcontainer',
+			   initialize: function() {
+	
+			      console.log("intializing view");
+				  this.model.on('add', this.render, this);
+				  this.model.on('remove', this.render, this);
+				  
+			   },
+			   events: {
+				
+				   'click a' : 'showAlert'
+				   
+			   },
+			   showAlert: function(){
+				    var txt = this.model.get('title');
+				    var m = JSON.stringify(this.model);
+					alert("clicked" + txt + m);
+			   },
+			   render: function() {
+			   
+			      console.log("rendering..");
+				  template = _.template($('#posttemplate').html());
+				  $('#postcontainer').html('');
+				  _.each(this.model.toArray(), function(userpost, i) {
+				     var htmloutput = template(userpost.toJSON());
+					 //this.$el.append(htmloutput);
+					 $('#postcontainer').append(htmloutput);
+				  });
+				  console.log('this.$el :' + this.$el.html());
+				  return this;
+				  
+			   }
+			});			
+			
+		   
+		  function createPost() {
+		    
+			console.log('running creatPost()');
+            //var postmodel = new PostMode({ title: $('#title').val(), post: $('#post').val() });
+			var postview = new PostView();
+			//postcollection.add({ title: $('#title').val(), post: $('#post').val() });
+			postcollection.create({ title: $('#title').val(), postTxt: $('#postTxt').val() });
+			console.log("postcollection: " + JSON.stringify(postcollection.toJSON()));
+			//new PostView({model: postmodel});
+			title: $('#title').val('');
+			post: $('#postTxt').val('');
+			
+		  }
+			
+        </script type="text/javascript">
+        
+    <style type="text/css">
+      
+       a {
+         color: blue;
+         font-size: 20px;
+       }
+    
+    </style>
+
+  </head>
+  <body>
+        
+         <input id="title" name="title" placeholder="Choose a title"></input>
+		 </br>
+		 </br>
+         <textarea id="postTxt" name="postTxt" placeholder="Enter content of the post"></textarea>
+		 
+		 </br>
+         <button onclick="createPost()">Post</button>
+         <hr/>
+
+		 <div class="container" id="postcontainer">
+		 </div>
+		 
+  </body>
+</html>
