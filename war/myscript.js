@@ -21,11 +21,34 @@
          }      
 
        }      
+       
+       function validateUserid() {
+           
+           var val = document.getElementById("userid").value; 
+  		   var reg = /^\w{4,39}$/;
+           if(reg.test(val)) {
+  		   
+  			document.getElementById('state5').className = "form-group has-success has-feedback";
+  			document.getElementById('glyp5').className = "glyphicon glyphicon-ok form-control-feedback";
+  			document.getElementById('helpblock5').innerHTML = "";
+              validName = true; 
+  			
+           } 
+           else {
+  		
+  			 document.getElementById('state5').className += " has-error has-feedback";
+  			 document.getElementById('glyp5').className = "glyphicon glyphicon-remove form-control-feedback";
+             document.getElementById('helpblock5').innerHTML = "Invalid input";
+  			 validName = false;
+  			
+           }      
+
+         }      
 
        function validateEmail(data) {
 		   
           var val = document.getElementById("email").value;
-          var reg = /\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+/;
+          var reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 		  
           if(reg.test(val)){
             
@@ -47,7 +70,7 @@
        function validatePhone(data) {
             
            var val = document.getElementById("phone").value;
-		   var reg = /^[0-9]{10,}/
+		   var reg = /^[0-9]{10,}$/
            if(reg.test(val)) {
                 
 				document.getElementById('state3').className = "form-group has-success has-feedback";
@@ -68,7 +91,7 @@
 	   function validatePassword(data) {
             
            var val = document.getElementById("password").value;
-		   var reg = /^[a-z0-9]{5,}/
+		   var reg = /^[0-9a-zA-Z]{5,39}$/;
            if(reg.test(val)) {
                 
 				document.getElementById('state4').className = "form-group has-success has-feedback";
@@ -95,17 +118,20 @@
 				var val1 = document.getElementById("name").value; 
 			    var reg1 = /^[A-Za-z]{3,}$/
 				var val2 = document.getElementById("email").value;
-	            var reg2 = /\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+/;
+	            var reg2 = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 				var val3 = document.getElementById("phone").value;
-			    var reg3 = /^[0-9]{10,}/   
+			    var reg3 = /^[0-9]{10,}$/   
 			    var val4 = document.getElementById("password").value;
-				var reg4 = /^[a-z0-9]{5,}/
-				var cnd1, cnd2, cnd3;
+				var reg4 = /^[0-9a-zA-Z]{5,39}$/;
+				var val5 = document.getElementById("userid").value;
+				var reg5 = /^\w{4,39}$/;
+				var cnd1, cnd2, cnd3, cnd4, cnd5;
 				cnd1 = reg1.test(val1);
 				cnd2 = reg2.test(val2);
 				cnd3 = reg3.test(val3);
 				cnd4 = reg4.test(val4);
-			    if(!(cnd1 && cnd2 && cnd3 && cnd4)) {
+				cnd5 = reg5.test(val5);
+			    if(!(cnd1 && cnd2 && cnd3 && cnd4 && cnd5)) {
 					   $i.addClass("alert alert-danger");
 					   $i.html("Invalid input!");
 					   event.preventDefault();

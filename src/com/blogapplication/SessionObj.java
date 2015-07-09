@@ -2,14 +2,13 @@ package com.blogapplication;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
-import javax.jdo.annotations.IdGeneratorStrategy;
 @PersistenceCapable
 public class SessionObj {
   
 	@PrimaryKey
     private String sessionId;
 	@Persistent
-	private String email;
+	private String userid;
 	
 	public String getSessionId() {
 		return sessionId;
@@ -19,12 +18,11 @@ public class SessionObj {
 		this.sessionId = sessionId;
 	}
 	
-	public String getEmail() {
-		return email;
+	public String getUserid() {
+		return userid;
 	}
 	
-	public void setEmail(String email)  {
-		this.email = email;
+	public void setUserid(String userid)  {
+		this.userid = userid;
 	}
-	
 }

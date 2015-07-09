@@ -1,7 +1,7 @@
 package com.blogapplication;
 import java.util.Date;
+import java.util.UUID;
 
-import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
@@ -12,26 +12,48 @@ import com.google.appengine.api.datastore.Text;
 public class UserPosts {
 	
 	@PrimaryKey
-	@Persistent(valueStrategy = IdGeneratorStrategy.IDENTITY)
-    private long id;
+    private String id;
 	@Persistent
 	private String title;
 	@Persistent
     private Date date;
 	@Persistent
-	private String username;
-	@Persistent
-	private String email;
+	private String author;
 	@Persistent
 	private Text postTxt;
 	
-    public String getEmail() {
-    	return email;
+    public String getId() {
+		return id;
+	}
+    
+    public void setId() {
+    	UUID uuid = UUID.randomUUID();
+    	this.id = uuid.toString();
     }
     
-    public void setEmail(String email) {
-    	this.email = email;
-    }
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getDate() {
+		return date.toString();
+	}
+
+	public void setDate() {
+		date = new Date();
+	}
+
+	public String getAuthor() {
+		return author;
+	}
+
+	public void setAuthor(String author) {
+		this.author = author;
+	}
     
     public String getpostTxt() {
     	return postTxt.getValue();
@@ -39,35 +61,6 @@ public class UserPosts {
     
     public void setPostTxt(String postTxt) {
     	this.postTxt = new Text(postTxt);
-    }
-	
-    public String getTitle() {
-    	return title;
-    }
-    
-    public void setTitle(String title) {
-    	this.title = title;
-    }
-    
-    public long getId() {
-    	return id;
-    }
-    
-    
-    public String getDate() {
-    	return date.toString();
-    }
-    
-    public void setDate() {
-    	date = new Date();
-    }
-
-    public void setUsername(String title) {
-    	this.title = title;
-    }
-   
-    public String getUsername(String title) {
-    	return username;
     }
     
 }

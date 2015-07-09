@@ -15,6 +15,8 @@ public class User {
 	@Persistent
 	private String name;
 	@Persistent
+	private String userid;
+	@Persistent
 	private String email;
 	@Persistent
 	private String phone;
@@ -27,6 +29,14 @@ public class User {
 	
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	public String getUserid() {
+		return userid;
+	}
+	
+	public void setUserid(String userid) {
+		this.userid = userid;
 	}
 	
 	public String getEmail() {
