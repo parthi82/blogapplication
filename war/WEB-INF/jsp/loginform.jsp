@@ -14,7 +14,6 @@
                 color: red;
                 text-align: center;
             }
-
         </style>
         <title>Login</title>
     </head>

@@ -23,12 +23,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.appengine.api.datastore.Cursor;
+import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
 import com.google.appengine.datanucleus.query.JDOCursorHelper;
 
 @Controller
-public class LoginController {
+public class BlogController {
 	
 	@RequestMapping(value="/logout", method=RequestMethod.GET)
 	public String logoutUser(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, 
@@ -51,7 +53,6 @@ public class LoginController {
 			
 			if(syncCache.contains(sessionId)) {
 				syncCache.delete(sessionId);
-				System.out.println("memcache deleted...................");
 			}
 			
 		    Cookie cookie = new Cookie("sessionId","");
@@ -72,13 +73,15 @@ public class LoginController {
 	}
 	
 	@RequestMapping(value="/profilepage",method=RequestMethod.GET)
-    public String showProfilePage(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId){
+    public String showProfilePage(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, ModelMap model){
 		
 		if(!sessionId.equals("invalid") && verifySession(sessionId)) {
-		   return "redirect:pages/userhomepage.html";
+		   String userid = getUseridFromSessionId(sessionId);
+		   model.addAttribute("userid", userid);
+		   return "userhomepage";
 		}
 		else {
-			return "redirect:signupform";
+		   return "redirect:signupform";
 		}
         
     }
@@ -109,7 +112,6 @@ public class LoginController {
 	   String redirectpage = "loginform";
 	   String login = request.getParameter("login");
 	   String password = request.getParameter("password");
-	   System.out.println("running... /login");
 	   
 	   Pattern email_pattern = Pattern.compile("^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$");
 	   Matcher email_matcher = email_pattern.matcher(login);
@@ -137,7 +139,6 @@ public class LoginController {
 					    }
 					    else {
 					        redirectpage = "loginform";
-					        System.out.println("incorrect password !"); 
 		                    request.setAttribute("login", login);
 					    }
 	   
@@ -170,8 +171,7 @@ public class LoginController {
 							   redirectpage =  "redirect:profilepage";				   
 						    }
 						    else {
-						        redirectpage = "loginform";
-						        System.out.println("incorrect password !"); 
+						        redirectpage = "loginform"; 
 			                    request.setAttribute("login", login);
 						    }
 				     } 
@@ -284,113 +284,207 @@ public class LoginController {
     	
     	String userid = null;
     	
-    	System.out.println("postTxt : " + post.getpostTxt());
     	
     	if(!sessionId.equals("invalid")) {
     		
-    	     userid = getUseridFromSessionId(sessionId);
-    	    
-    	    
+    	        userid = getUseridFromSessionId(sessionId);    	
+    	
+		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+		        
+		    	try {
+		    		
+		    		//post.setKey();
+		    		post.setDate();
+		    		post.setAuthor(userid);
+		    		pm.makePersistent(post);
+		    		
+		    	}
+		    	finally {
+		    		
+		    		pm.close();
+		    		
+		    	}
+		    	
     	}
-    	
-    	
-    	PersistenceManager pm = PMF.get().getPersistenceManager();
-        
-    	try {
-    		
-    		post.setId();
-    		post.setDate();
-    		post.setAuthor(userid);
-    		pm.makePersistent(post);
-    		
-    	}
-    	finally {
-    		
-    		pm.close();
-    		
-    	}
-    	
-    	
-    	
-    	return post;
+		    	
+		    	return post;
     }
     
     @RequestMapping(value = "/posts", method=RequestMethod.GET)
-    public String getPosts(@CookieValue(value = "sessionId", defaultValue = "invalid") 
-                  String sessionId,ModelMap model) {
+    public String getPosts(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, ModelMap model) {
     	
-    	List<UserPosts> posts = null;
-    	PersistenceManager pm = PMF.get().getPersistenceManager();
-		Query q = pm.newQuery(UserPosts.class);
-    	q.setOrdering("date desc");
-    	q.setRange(0, 2);
+    	String returnpage = "loginform";
     	
-    		try {
-    			
-//    			System.out.println(q.execute());
-    			posts = (List<UserPosts>) q.execute();
-    			//System.out.println(posts);
-    			if(!posts.isEmpty()) {
-	    			model.addAttribute("posts", posts);
-    			}
-    			
-    			Cursor cursor = JDOCursorHelper.getCursor(posts);
-    			String cursorString = cursor.toWebSafeString();
-    			model.addAttribute("cursorString",cursorString);
+    	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
     		
-    			
-    			
-    		}
-    		finally {
-    			
-    			q.closeAll();
-    			pm.close();
-    		}
+		    	List<UserPosts> posts = null;
+		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+				Query q = pm.newQuery(UserPosts.class);
+		    	q.setOrdering("date desc");
+		    	q.setRange(0, 2);
+		    	
+		    	   try {
+		    			
+		
+		    			posts = (List<UserPosts>) q.execute();
+		    			if(!posts.isEmpty()) {
+			    			model.addAttribute("posts", posts);
+		    			}
+		    			
+		    			Cursor cursor = JDOCursorHelper.getCursor(posts);
+		    			String cursorString = cursor.toWebSafeString();
+		    			model.addAttribute("cursorString",cursorString);
+		    			returnpage = "postspage";
+		    			
+		    			
+		    		}
+		    		finally {
+		    			
+		    			q.closeAll();
+		    			pm.close();
+		    		}
+		    		
+    	  }
     		
-          return "postspage";
+          return returnpage;
   
     }
     
     @RequestMapping(value = "/posts/{cursorString}", method=RequestMethod.GET)
-    public String getMorePosts(@PathVariable String cursorString, ModelMap model) {
+    public String getMorePosts(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId,
+    		@PathVariable String cursorString, ModelMap model) {
+        
+    	String returnpage = "loginform"; 	
     	
-    	Cursor cursor = Cursor.fromWebSafeString(cursorString);
-    	List<UserPosts> posts = null;
-    	PersistenceManager pm = PMF.get().getPersistenceManager();
-		Query q = pm.newQuery(UserPosts.class);
-    	q.setOrdering("date desc");
-    	Map<String, Object> extensionMap = new HashMap<String, Object>();
-		extensionMap.put(JDOCursorHelper.CURSOR_EXTENSION, cursor);
-		q.setExtensions(extensionMap);
-    	q.setRange(0, 2);
-    	
-    	
-    	
-    		try {
-    			
-    			posts = (List<UserPosts>) q.execute();
-    			//System.out.println(posts);
-    			if(!posts.isEmpty()) {
-	    			model.addAttribute("posts", posts);
-    			}
-    			
-    			cursor = JDOCursorHelper.getCursor(posts);
-    			cursorString = cursor.toWebSafeString();
-    			model.addAttribute("cursorString",cursorString);
-    		
-    			
-    			
-    		}
-    		finally {
-    			
-    			q.closeAll();
-    			pm.close();
-    		}
-    		
-          return "postspage";
+		if(!sessionId.equals("invalid") && verifySession(sessionId)) {
+			
+		    	Cursor cursor = Cursor.fromWebSafeString(cursorString);
+		    	List<UserPosts> posts = null;
+		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+				Query q = pm.newQuery(UserPosts.class);
+		    	q.setOrdering("date desc");
+		    	Map<String, Object> extensionMap = new HashMap<String, Object>();
+				extensionMap.put(JDOCursorHelper.CURSOR_EXTENSION, cursor);
+				q.setExtensions(extensionMap);
+		    	q.setRange(0, 2);
+		    	
+		    	
+		    	
+		    		try {
+		    			
+		    			posts = (List<UserPosts>) q.execute();
+		    			if(!posts.isEmpty()) {
+			    			model.addAttribute("posts", posts);
+		    			}
+		    			
+		    			cursor = JDOCursorHelper.getCursor(posts);
+		    			cursorString = cursor.toWebSafeString();
+		    			model.addAttribute("cursorString",cursorString);
+		    		    returnpage = "postspage";
+		    			
+		    			
+		    		}
+		    		finally {
+		    			
+		    			q.closeAll();
+		    			pm.close();
+		    		}
+		    		
+		}
+		
+        return returnpage;
   
     }
 	
+    
+    
+    @RequestMapping(value="/post/{key}", method=RequestMethod.GET) 
+    public String showpost (@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, 
+    		@PathVariable String key, ModelMap model) {	
+        
+    	
+        String returnpage = "loginform";
+    	
+    	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
+    		
+		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+				
+		    	try {
+		    		
+		    		UserPosts post = null;
+		    		//Key k = KeyFactory.createKey(UserPosts.class.getSimpleName(), key);
+		    		post = pm.getObjectById(UserPosts.class, key);
+		    		//post = pm.getObjectById(UserPosts.class, id);
+		    		model.addAttribute("post", post);
+		    		returnpage = "viewpost";
+		    		
+		    	}
+		    	finally {
+		    		pm.close();
+		    	}
+		    	
+    	}
+    	
+    	return returnpage;
+    	
+    }
+    
+    @RequestMapping(value="/post", method=RequestMethod.POST) 
+    public @ResponseBody String makeNewpost (@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, 
+    		HttpServletRequest request, ModelMap model) {	
+    	
+    	String key = "invalid";
+    	
+    	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
+    		  
+		    	
+		        String title = request.getParameter("title");
+		        String postTxt = request.getParameter("postTxt");
+		    	String userid = getUseridFromSessionId(sessionId);
+		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+		    	UserPosts post = new UserPosts();
+		    	
+		    	try {
+		    	   post.setAuthor(userid);
+		    	   post.setTitle(title);
+				   post.setPostTxt(postTxt);
+				   post.setDate();
+				   post.setKey();
+				   pm.makePersistent(post);
+				   key = KeyFactory.keyToString(post.getKey());
+		    	}
+		    	finally {
+		    		pm.close();
+		    	}
+		    	
+    	  }
+    	
+    	  return key;
+    		
+      }
+    
+    @RequestMapping(value="/post", method=RequestMethod.PUT) 
+    public @ResponseBody void updatepost (@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId,
+    		HttpServletRequest request, ModelMap model) {	
+    	
+    	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
+    		
+		        String id = request.getParameter("id");
+		        String postTxt = request.getParameter("postTxt");
+		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+		    	try {
+				   UserPosts post = pm.getObjectById(UserPosts.class, id);
+				   post.setPostTxt(postTxt);
+				   pm.makePersistent(post);
+		    	}
+		    	finally {
+		    		pm.close();
+		    	}
+		    	
+    	}
+    	
+    }
+    
     @RequestMapping(value = "/UserPosts", method=RequestMethod.GET)
     public String getUserPosts(@CookieValue(value = "sessionId", defaultValue = "invalid") 
                   String sessionId,ModelMap model) {
@@ -403,9 +497,7 @@ public class LoginController {
     	
     		try {
     			
-//    			System.out.println(q.execute());
     			posts = (List<UserPosts>) q.execute();
-    			//System.out.println(posts);
     			if(!posts.isEmpty()) {
 	    			model.addAttribute("posts", posts);
     			}
@@ -425,54 +517,6 @@ public class LoginController {
     		
           return "postspage";
   
-    }
-    
-    @RequestMapping(value="/post/{id}", method=RequestMethod.GET) 
-    //public @ResponseBody UserPosts getUserPost(@PathVariable String idparam) {
-    public String showpost (@PathVariable String id, ModelMap model) {	
-    
-    	System.out.println(id);
-    	PersistenceManager pm = PMF.get().getPersistenceManager();
-		//Query q = pm.newQuery(UserPosts.class);
-		//q.setFilter("id == idParam");
-		//q.declareParameters("String idParam");
-		
-    	try {
-    		
-    		//List<UserPosts> result = (List<UserPosts>) q.execute(id);
-    		UserPosts post = null;
-    		post = pm.getObjectById(UserPosts.class, id);
-    		model.addAttribute("post", post);
-    		
-    	}
-    	finally {
-    		pm.close();
-    	}
-    
-    	return "viewpost";
-    }
-    
-    
-    @RequestMapping(value="/post", method=RequestMethod.PUT) 
-    //public @ResponseBody UserPosts getUserPost(@PathVariable String idparam) {
-    public @ResponseBody void updatepost (HttpServletRequest request, ModelMap model) {	
-        String id = request.getParameter("id");
-        String postTxt = request.getParameter("postTxt");
-    	System.out.println(postTxt);
-    	System.out.println(id);
-    	PersistenceManager pm = PMF.get().getPersistenceManager();
-    	try {
-		   UserPosts post = pm.getObjectById(UserPosts.class, id);
-		   post.setPostTxt(postTxt);
-		   pm.makePersistent(post);
-    	}
-    	catch(Exception e) {
-    		System.out.println(e);
-    	}
-    	finally {
-    		pm.close();
-    	}
-		
     }
     
     @RequestMapping(value="/UserPosts/{id}",  method=RequestMethod.PUT)
@@ -530,7 +574,6 @@ public class LoginController {
     }
     
 	public static boolean emailExists(String email) {
-		System.out.println("running emailExists()....");
 		boolean result;
 	
 		PersistenceManager pm = PMF.get().getPersistenceManager();
@@ -543,10 +586,8 @@ public class LoginController {
  
 			if (results.isEmpty()) {
 				result = false;
-				System.out.println("email does not exists... " + result);
 			} else {
 				result = true;
-				System.out.println("email exists...  " + result);
 			}
 			
 		} finally {
@@ -554,12 +595,11 @@ public class LoginController {
 			pm.close();
 		}
 		
-		System.out.println("email" + result);
 		return result;
 	}
 	
 	public static boolean useridExists(String userid) {
-		System.out.println("running useridExists()...");
+		
 		boolean result;
 		
 		PersistenceManager pm = PMF.get().getPersistenceManager();
@@ -573,11 +613,10 @@ public class LoginController {
 			
 			if(results.isEmpty()) {
 				result = false;
-				System.out.println("userid exists... " + result);
+				
 			}
 			else {
 				result = true;
-				System.out.println("email does not exists... " + result);
 			}
 			
 		}
@@ -629,7 +668,6 @@ public class LoginController {
 		if(syncCache.contains(sessionId)){
 			
 			returnval = true;
-			System.out.println("memcache checked for sessionId = " + sessionId);
 			
 		}
 		else {
@@ -672,7 +710,6 @@ public class LoginController {
 		if(syncCache.contains(sessionId)){
 			
 			userid = (String)syncCache.get(sessionId);
-			System.out.println("got email form memcache........................... ");
 			
 		}
 		else {

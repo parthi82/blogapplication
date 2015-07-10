@@ -2,17 +2,20 @@ package com.blogapplication;
 import java.util.Date;
 import java.util.UUID;
 
+import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 
+import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Text;
 
 @PersistenceCapable
 public class UserPosts {
 	
 	@PrimaryKey
-    private String id;
+    private Key key;
 	@Persistent
 	private String title;
 	@Persistent
@@ -22,13 +25,13 @@ public class UserPosts {
 	@Persistent
 	private Text postTxt;
 	
-    public String getId() {
-		return id;
+    public Key getKey() {
+		return key;
 	}
     
-    public void setId() {
+    public void setKey() {
     	UUID uuid = UUID.randomUUID();
-    	this.id = uuid.toString();
+    	this.key = KeyFactory.createKey(UserPosts.class.getSimpleName(), uuid.toString());
     }
     
 	public String getTitle() {
