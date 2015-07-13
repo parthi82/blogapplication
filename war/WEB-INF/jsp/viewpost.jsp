@@ -26,9 +26,11 @@
                <p id="postTxt"><%=postobj.getpostTxt()%></p>
           </div>
           <button id="edit">Edit</button>
+          <a id="posthistory">View History</a>
           <a id="postid" style="display:none"><%=KeyFactory.keyToString(postobj.getKey())%></a>
-          <button type="submit" on id="save">Save</button>
+          <button type="submit" id="save">Save</button>
           <button id="cancel">Cancel</button>
+          
        <%
           }
        %>
