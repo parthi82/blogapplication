@@ -4,15 +4,19 @@ $(document).ready(function() {
     var $cancel = $('#cancel');
     var $save = $('#save');
     var $postTxt = $('#postTxt');
+    var $txtarea = $('#txtarea');
     $cancel.hide();
     $save.hide();
+    $txtarea.hide();
     
     $('#back').click(function() {
 	    window.history.back();
 	});
     
 	$edit.click(function() {
-		$postTxt.attr("contenteditable","true");
+		$postTxt.hide();
+		$txtarea.show();
+		$txtarea.val($postTxt.html());
 		$edit.hide();
 		$cancel.show();
 		$save.show();
@@ -20,7 +24,7 @@ $(document).ready(function() {
 			var req =$.ajax({
 				method: "PUT",
 				url: "/post",
-				data: {postTxt: $postTxt.html(), id: $('#postid').html()}
+				data: {postTxt: $txtarea.val(), id: $('#postid').html()}
 			});
 			req.done(function(){
 				 location.reload();
@@ -31,6 +35,9 @@ $(document).ready(function() {
 			$edit.show();
 			$cancel.hide();
 			$save.hide();
+			$txtarea.val('');
+			$txtarea.hide();
+			$postTxt.show();
 		});
 		
 	});

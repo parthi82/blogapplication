@@ -7,8 +7,20 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>POST</title>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="/viewpost.js"></script>
+
+<style type="text/css">
+   
+   #txtarea {
+       font-family:Times New Roman;
+       font-size:15px;
+       color:black;
+       white-space:pre-wrap";
+   }
+   
+</style>
+
 </head>
 <body>
        <% 
@@ -20,15 +32,16 @@
           <div class="container">
                <div>
                  <span><strong>Author: <%=postobj.getAuthor()%>  Title: <%=postobj.getTitle()%>  </strong></span>
+                 <a href="/viewposthistory/<%=KeyFactory.keyToString(postobj.getKey())%>" id="posthistory">View History</a>
                  <hr>
                  <span><strong>Date: <%=postobj.getDate()%></strong></span>
                </div>
-               <p id="postTxt"><%=postobj.getpostTxt()%></p>
+               <div id="postTxt"><%=postobj.getpostTxt()%></div>
           </div>
           <button id="edit">Edit</button>
-          <a id="posthistory">View History</a>
           <a id="postid" style="display:none"><%=KeyFactory.keyToString(postobj.getKey())%></a>
-          <button type="submit" id="save">Save</button>
+          <textarea rows="4" cols="50" id="txtarea"></textarea>
+          <button id="save">Save</button>
           <button id="cancel">Cancel</button>
           
        <%
@@ -37,7 +50,7 @@
        
        <br>
        <br>
-       <a href id="back" onclick="goBack()">Back</a>  
+       <a href id="back">Back</a>  
        
 </body>
 </html>

@@ -9,6 +9,7 @@ import javax.jdo.annotations.PrimaryKey;
 
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.datastore.Text;
 
 @PersistenceCapable
 public class PostHistory {
@@ -18,18 +19,26 @@ public class PostHistory {
 	
 	@Persistent
 	private String UserPostsKey;
-    
-	@Persistent
-	private int version = 0;
-	
+  
 	@Persistent
 	private Date date;
 	
 	@Persistent
-	private String txtBeforeEdit;
+	private String editor;
+
+	@Persistent
+	private Text txtBeforeEdit;
 	
 	@Persistent
-	private String txtAfterEdit;
+	private Text txtAfterEdit;
+	
+	public String getEditor() {
+		return editor;
+	}
+
+	public void setEditor(String editor) {
+		this.editor = editor;
+	}
 
 	public Key getKey() {
 		return key;
@@ -37,27 +46,19 @@ public class PostHistory {
 
 	public void setKey() {
 		UUID uuid = UUID.randomUUID();
-    	this.key = KeyFactory.createKey(UserPosts.class.getSimpleName(), uuid.toString());
+    	this.key = KeyFactory.createKey(PostHistory.class.getSimpleName(), uuid.toString());
 	}
 
 	public String getUserPostsKey() {
 		return  UserPostsKey;
 	}
 
-	public void setPostid(String UserPostsKey) {
+	public void setUserPostsKey(String UserPostsKey) {
 		this.UserPostsKey = UserPostsKey;
 	}
 
-	public int getVersion() {
-		return version;
-	}
-
-	public void setVersion() {
-		this.version = this.version + 1;
-	}
-
-	public Date getDate() {
-		return date;
+	public String getDate() {
+		return date.toString();
 	}
 
 	public void setDate() {
@@ -65,19 +66,19 @@ public class PostHistory {
 	}
 
 	public String getTxtBeforeEdit() {
-		return txtBeforeEdit;
+		return txtBeforeEdit.getValue();
 	}
 
 	public void setTxtBeforeEdit(String txtBeforeEdit) {
-		this.txtBeforeEdit = txtBeforeEdit;
+		this.txtBeforeEdit = new Text(txtBeforeEdit);
 	}
 
 	public String getTxtAfterEdit() {
-		return txtAfterEdit;
+		return txtAfterEdit.getValue();
 	}
 
 	public void setTxtAfterEdit(String txtAfterEdit) {
-		this.txtAfterEdit = txtAfterEdit;
+		this.txtAfterEdit = new Text(txtAfterEdit);
 	}
 
 	

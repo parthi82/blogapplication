@@ -23,7 +23,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.appengine.api.datastore.Cursor;
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
@@ -31,6 +30,11 @@ import com.google.appengine.datanucleus.query.JDOCursorHelper;
 
 @Controller
 public class BlogController {
+	
+	@RequestMapping(value="/", method=RequestMethod.GET)
+	public String showdefaultpage() {
+		return "redirect:login";
+	}
 	
 	@RequestMapping(value="/logout", method=RequestMethod.GET)
 	public String logoutUser(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, 
@@ -81,7 +85,7 @@ public class BlogController {
 		   return "userhomepage";
 		}
 		else {
-		   return "redirect:signupform";
+		   return "redirect:login";
 		}
         
     }
@@ -430,8 +434,8 @@ public class BlogController {
     }
     
     @RequestMapping(value="/post", method=RequestMethod.POST) 
-    public @ResponseBody String makeNewpost (@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, 
-    		HttpServletRequest request, ModelMap model) {	
+    public @ResponseBody String makeNewpost (@CookieValue(value = "sessionId", defaultValue = "invalid") 
+           String sessionId, HttpServletRequest request) {	
     	
     	String key = "invalid";
     	
@@ -472,10 +476,22 @@ public class BlogController {
 		        String id = request.getParameter("id");
 		        String postTxt = request.getParameter("postTxt");
 		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+		    	String userid = getUseridFromSessionId(sessionId);
 		    	try {
 				   UserPosts post = pm.getObjectById(UserPosts.class, id);
+				   
+				   PostHistory posthistory = new PostHistory();
+				   posthistory.setKey();
+				   posthistory.setDate();
+				   posthistory.setUserPostsKey(id);
+				   posthistory.setTxtBeforeEdit(post.getpostTxt());
+				   posthistory.setTxtAfterEdit(postTxt);
+				   posthistory.setEditor(userid);
+				   
 				   post.setPostTxt(postTxt);
 				   pm.makePersistent(post);
+				   pm.makePersistent(posthistory);
+				   
 		    	}
 		    	finally {
 		    		pm.close();
@@ -484,6 +500,55 @@ public class BlogController {
     	}
     	
     }
+    
+    @RequestMapping(value="/viewposthistory/{key}", method=RequestMethod.GET)
+    public String viewposthistory(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, 
+    		@PathVariable String key, ModelMap model){
+    	
+    	
+        String returnpage = "loginform";
+    	
+    	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
+    		
+    		returnpage = "viewposthistory";
+    		model.addAttribute("UserPostsKey", key);
+    		
+    	}
+    	
+    	return returnpage;
+  
+    }
+    
+    @RequestMapping(value="/edithistory", method=RequestMethod.POST)
+    public @ResponseBody List<PostHistory> edithistory(@CookieValue(value = "sessionId", defaultValue = "invalid") 
+           String sessionId, HttpServletRequest request) {
+    	
+    	String userpostskey = request.getParameter("UserPostsKey");
+    	List<PostHistory> posthistory = null;
+    	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
+          
+    		PersistenceManager pm = PMF.get().getPersistenceManager();
+    		Query q = pm.newQuery(PostHistory.class);
+    		
+    		q.setFilter("UserPostsKey == UserPostsKeyParameter");
+    		q.declareParameters("String UserPostsKeyParameter");
+    		q.setOrdering("date desc");
+    		
+    		try {
+        		posthistory = (List<PostHistory>) q.execute(userpostskey);
+        	}
+            finally {
+            	q.closeAll();
+            	//pm.close();
+            }
+		
+  	     }
+    	
+    	
+    	return posthistory;
+    	
+    }
+    
     
     @RequestMapping(value = "/UserPosts", method=RequestMethod.GET)
     public String getUserPosts(@CookieValue(value = "sessionId", defaultValue = "invalid") 
