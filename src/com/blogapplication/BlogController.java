@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.CookieValue;
 
@@ -32,7 +33,12 @@ import com.google.appengine.datanucleus.query.JDOCursorHelper;
 public class BlogController {
 	
 	@RequestMapping(value="/", method=RequestMethod.GET)
-	public String showdefaultpage() {
+	public String showdefaultpage(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId) {
+		
+		if(!sessionId.equals("invalid") && verifySession(sessionId)) {
+			return "redirect:profilepage";
+		}
+		
 		return "redirect:login";
 	}
 	
@@ -104,8 +110,12 @@ public class BlogController {
 	}
 	
 	@RequestMapping(value="/login",method=RequestMethod.GET)
-    public String showLoginForm(){
-        
+    public String showLoginForm(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId){
+		
+		if(!sessionId.equals("invalid") && verifySession(sessionId)) {
+			return "redirect:profilepage";
+		}
+		
         return "loginform";
         
     }
@@ -195,7 +205,7 @@ public class BlogController {
 	}
 		
 	@RequestMapping(value="/add", method=RequestMethod.POST)
-	 public String addUser(HttpServletResponse response, HttpServletRequest request) {
+	public String addUser(HttpServletResponse response, HttpServletRequest request) {
 	    
        	String name = request.getParameter("name");
        	String userid = request.getParameter("userid");
@@ -282,37 +292,7 @@ public class BlogController {
 	 }
 	 
     
-    @RequestMapping(value = "/UserPosts", method=RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public @ResponseBody UserPosts createUserPost(@RequestBody  UserPosts post, 
-    		@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId) {
-    	
-    	String userid = null;
-    	
-    	
-    	if(!sessionId.equals("invalid")) {
-    		
-    	        userid = getUseridFromSessionId(sessionId);    	
-    	
-		    	PersistenceManager pm = PMF.get().getPersistenceManager();
-		        
-		    	try {
-		    		
-		    		//post.setKey();
-		    		post.setDate();
-		    		post.setAuthor(userid);
-		    		pm.makePersistent(post);
-		    		
-		    	}
-		    	finally {
-		    		
-		    		pm.close();
-		    		
-		    	}
-		    	
-    	}
-		    	
-		    	return post;
-    }
+
     
     @RequestMapping(value = "/posts", method=RequestMethod.GET)
     public String getPosts(@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, ModelMap model) {
@@ -324,13 +304,13 @@ public class BlogController {
 		    	List<UserPosts> posts = null;
 		    	PersistenceManager pm = PMF.get().getPersistenceManager();
 				Query q = pm.newQuery(UserPosts.class);
-		    	q.setOrdering("date desc");
-		    	q.setRange(0, 2);
+		    	q.setOrdering("dateOfCreation desc");
+		    	q.setRange(0, 10);
 		    	
 		    	   try {
-		    			
 		
 		    			posts = (List<UserPosts>) q.execute();
+		    			
 		    			if(!posts.isEmpty()) {
 			    			model.addAttribute("posts", posts);
 		    			}
@@ -366,7 +346,7 @@ public class BlogController {
 		    	List<UserPosts> posts = null;
 		    	PersistenceManager pm = PMF.get().getPersistenceManager();
 				Query q = pm.newQuery(UserPosts.class);
-		    	q.setOrdering("date desc");
+		    	q.setOrdering("dateOfCreation desc");
 		    	Map<String, Object> extensionMap = new HashMap<String, Object>();
 				extensionMap.put(JDOCursorHelper.CURSOR_EXTENSION, cursor);
 				q.setExtensions(extensionMap);
@@ -403,23 +383,34 @@ public class BlogController {
     
     
     @RequestMapping(value="/post/{key}", method=RequestMethod.GET) 
-    public String showpost (@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, 
+    public String showpost (@RequestParam(required = false) Integer version, 
+    		@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId, 
     		@PathVariable String key, ModelMap model) {	
         
-    	
         String returnpage = "loginform";
     	
     	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
     		
 		    	PersistenceManager pm = PMF.get().getPersistenceManager();
-				
+		    	UserPosts post = null;
+		    	List<PostHistory> posthistoryList = null;
+	    		Query q = pm.newQuery(PostHistory.class);
+	    		q.setFilter("UserPostsKey == UserPostsKeyParameter");
+				q.declareParameters("String UserPostsKeyParameter");
+		    	q.setOrdering("version asc");
+		    	
 		    	try {
 		    		
-		    		UserPosts post = null;
+		    		
 		    		//Key k = KeyFactory.createKey(UserPosts.class.getSimpleName(), key);
-		    		post = pm.getObjectById(UserPosts.class, key);
-		    		//post = pm.getObjectById(UserPosts.class, id);
-		    		model.addAttribute("post", post);
+		    		post = (UserPosts)pm.getObjectById(UserPosts.class, key);
+		    	    posthistoryList = (List<PostHistory>) q.execute(key);
+		            
+		    	    if(!posthistoryList.isEmpty()) {
+		    	      int index = (version == null) ? (posthistoryList.size() - 1) : version; 
+		    	      model.addAttribute("posthistory", posthistoryList.get(index));
+		    		  model.addAttribute("post", post);
+		    	    }
 		    		returnpage = "viewpost";
 		    		
 		    	}
@@ -435,10 +426,9 @@ public class BlogController {
     
     @RequestMapping(value="/post", method=RequestMethod.POST) 
     public @ResponseBody String makeNewpost (@CookieValue(value = "sessionId", defaultValue = "invalid") 
-           String sessionId, HttpServletRequest request) {	
+                         String sessionId, HttpServletRequest request) {	
     	
     	String key = "invalid";
-    	
     	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
     		  
 		    	
@@ -447,15 +437,26 @@ public class BlogController {
 		    	String userid = getUseridFromSessionId(sessionId);
 		    	PersistenceManager pm = PMF.get().getPersistenceManager();
 		    	UserPosts post = new UserPosts();
+		    	PostHistory posthistory = new PostHistory();
 		    	
 		    	try {
+		    		
 		    	   post.setAuthor(userid);
 		    	   post.setTitle(title);
-				   post.setPostTxt(postTxt);
-				   post.setDate();
+				   post.setDateOfCreation();
 				   post.setKey();
+				   
+				   posthistory.setDateOfEdit();
+				   posthistory.setEditor(userid);
+				   posthistory.setKey();
+				   posthistory.setVersion(0);
+				   posthistory.setPostTxt(postTxt);
+				   
 				   pm.makePersistent(post);
 				   key = KeyFactory.keyToString(post.getKey());
+				   posthistory.setUserPostsKey(key);
+				   pm.makePersistent(posthistory);
+				   
 		    	}
 		    	finally {
 		    		pm.close();
@@ -473,29 +474,41 @@ public class BlogController {
     	
     	if(!sessionId.equals("invalid") && verifySession(sessionId)) {
     		
-		        String id = request.getParameter("id");
+		        String UserPostsKey = request.getParameter("id");
 		        String postTxt = request.getParameter("postTxt");
-		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+		    	
 		    	String userid = getUseridFromSessionId(sessionId);
+		    	List<PostHistory> posthistoryList = null;
+		    	
+		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+	    		Query q = pm.newQuery(PostHistory.class);
+	    		q.setFilter("UserPostsKey == UserPostsKeyParameter");
+				q.declareParameters("String UserPostsKeyParameter");
+		
 		    	try {
-				   UserPosts post = pm.getObjectById(UserPosts.class, id);
-				   
-				   PostHistory posthistory = new PostHistory();
-				   posthistory.setKey();
-				   posthistory.setDate();
-				   posthistory.setUserPostsKey(id);
-				   posthistory.setTxtBeforeEdit(post.getpostTxt());
-				   posthistory.setTxtAfterEdit(postTxt);
-				   posthistory.setEditor(userid);
-				   
-				   post.setPostTxt(postTxt);
-				   pm.makePersistent(post);
-				   pm.makePersistent(posthistory);
-				   
+		    		
+		    		posthistoryList = (List<PostHistory>) q.execute(UserPostsKey);
+				    if(!posthistoryList.isEmpty()) {
+				    	
+				    	int version = posthistoryList.size();
+				    	PostHistory posthistory = new PostHistory();
+				    	posthistory.setEditor(userid);
+				    	posthistory.setDateOfEdit();
+				    	posthistory.setKey();
+				    	posthistory.setUserPostsKey(UserPostsKey);
+				    	posthistory.setPostTxt(postTxt);
+				    	posthistory.setVersion(version);
+				    	pm.makePersistent(posthistory);
+				    	
+				    }
+		    		
 		    	}
 		    	finally {
+		    		q.closeAll();
 		    		pm.close();
 		    	}
+		    	
+		    
 		    	
     	}
     	
@@ -532,7 +545,7 @@ public class BlogController {
     		
     		q.setFilter("UserPostsKey == UserPostsKeyParameter");
     		q.declareParameters("String UserPostsKeyParameter");
-    		q.setOrdering("date desc");
+    		q.setOrdering("version desc");
     		
     		try {
         		posthistory = (List<PostHistory>) q.execute(userpostskey);
@@ -550,94 +563,6 @@ public class BlogController {
     }
     
     
-    @RequestMapping(value = "/UserPosts", method=RequestMethod.GET)
-    public String getUserPosts(@CookieValue(value = "sessionId", defaultValue = "invalid") 
-                  String sessionId,ModelMap model) {
-    	
-    	List<UserPosts> posts = null;
-    	PersistenceManager pm = PMF.get().getPersistenceManager();
-		Query q = pm.newQuery(UserPosts.class);
-    	q.setOrdering("date desc");
-    	q.setRange(0, 2);
-    	
-    		try {
-    			
-    			posts = (List<UserPosts>) q.execute();
-    			if(!posts.isEmpty()) {
-	    			model.addAttribute("posts", posts);
-    			}
-    			
-    			Cursor cursor = JDOCursorHelper.getCursor(posts);
-    			String cursorString = cursor.toWebSafeString();
-    			model.addAttribute("cursorString",cursorString);
-    		
-    			
-    			
-    		}
-    		finally {
-    			
-    			q.closeAll();
-    			pm.close();
-    		}
-    		
-          return "postspage";
-  
-    }
-    
-    @RequestMapping(value="/UserPosts/{id}",  method=RequestMethod.PUT)
-    public @ResponseBody UserPosts updateUserPost(@PathVariable Long id, @RequestBody UserPosts post) {
-    	
-    	PersistenceManager pm = PMF.get().getPersistenceManager();
-		Query q = pm.newQuery(UserPosts.class);
-		q.setFilter("id == idParameter");
-		q.declareParameters("String idParameter");
-    	
-    	try {
-			List<User> results = (List<User>) q.execute(id);
- 
-			if (!results.isEmpty()) {
-		        
-				pm.makePersistent(post);
-	           
-			} 
-			
-			
-		} finally {
-			q.closeAll();
-			pm.close();
-		}
-		
-    	return post;
-    	
-    	
-    }
-    
-    @RequestMapping(value="/UserPosts/{id}", method=RequestMethod.DELETE)
-    public @ResponseBody void deleteUserPost(@PathVariable String id) {
-    	
-    	PersistenceManager pm = PMF.get().getPersistenceManager();
-		Query q = pm.newQuery(UserPosts.class);
-		q.setFilter("id == idParameter");
-		q.declareParameters("String idParameter");
-    	
-    	try {
-			List<User> results = (List<User>) q.execute(id);
- 
-			if (!results.isEmpty()) {
-		        
-				pm.deletePersistent(results.get(0));
-	            
-				
-			} 
-			
-			
-		} finally {
-			q.closeAll();
-			pm.close();
-		}
-    	
-    }
-    
 	public static boolean emailExists(String email) {
 		boolean result;
 	
@@ -648,7 +573,6 @@ public class BlogController {
 		
 		try {
 			List<User> results = (List<User>) q.execute(email);
- 
 			if (results.isEmpty()) {
 				result = false;
 			} else {
@@ -836,5 +760,128 @@ public class BlogController {
     	
     	return userDetails;
     }
+    
+    
+//  @RequestMapping(value = "/UserPosts", method=RequestMethod.POST, consumes = "application/json", produces = "application/json")
+//  public @ResponseBody UserPosts createUserPost(@RequestBody  UserPosts post, 
+//  		@CookieValue(value = "sessionId", defaultValue = "invalid") String sessionId) {
+//  	
+//  	String userid = null;
+//  	
+//  	
+//  	if(!sessionId.equals("invalid")) {
+//  		
+//  	        userid = getUseridFromSessionId(sessionId);    	
+//  	
+//		    	PersistenceManager pm = PMF.get().getPersistenceManager();
+//		        
+//		    	try {
+//		    		
+//		    		//post.setKey();
+//		    		post.setDate();
+//		    		post.setAuthor(userid);
+//		    		pm.makePersistent(post);
+//		    		
+//		    	}
+//		    	finally {
+//		    		
+//		    		pm.close();
+//		    		
+//		    	}
+//		    	
+//  	}
+//		    	
+//		    	return post;
+//  }
+    
+    
+//    @RequestMapping(value = "/UserPosts", method=RequestMethod.GET)
+//    public String getUserPosts(@CookieValue(value = "sessionId", defaultValue = "invalid") 
+//                  String sessionId,ModelMap model) {
+//    	
+//    	List<UserPosts> posts = null;
+//    	PersistenceManager pm = PMF.get().getPersistenceManager();
+//		Query q = pm.newQuery(UserPosts.class);
+//    	q.setOrdering("date desc");
+//    	q.setRange(0, 2);
+//    	
+//    		try {
+//    			
+//    			posts = (List<UserPosts>) q.execute();
+//    			if(!posts.isEmpty()) {
+//	    			model.addAttribute("posts", posts);
+//    			}
+//    			
+//    			Cursor cursor = JDOCursorHelper.getCursor(posts);
+//    			String cursorString = cursor.toWebSafeString();
+//    			model.addAttribute("cursorString",cursorString);
+//    		
+//    			
+//    			
+//    		}
+//    		finally {
+//    			
+//    			q.closeAll();
+//    			pm.close();
+//    		}
+//    		
+//          return "postspage";
+//  
+//    }
+    
+//    @RequestMapping(value="/UserPosts/{id}",  method=RequestMethod.PUT)
+//    public @ResponseBody UserPosts updateUserPost(@PathVariable Long id, @RequestBody UserPosts post) {
+//    	
+//    	PersistenceManager pm = PMF.get().getPersistenceManager();
+//		Query q = pm.newQuery(UserPosts.class);
+//		q.setFilter("id == idParameter");
+//		q.declareParameters("String idParameter");
+//    	
+//    	try {
+//			List<User> results = (List<User>) q.execute(id);
+// 
+//			if (!results.isEmpty()) {
+//		        
+//				pm.makePersistent(post);
+//	           
+//			} 
+//			
+//			
+//		} finally {
+//			q.closeAll();
+//			pm.close();
+//		}
+//		
+//    	return post;
+//    	
+//    	
+//    }
+//    
+//    @RequestMapping(value="/UserPosts/{id}", method=RequestMethod.DELETE)
+//    public @ResponseBody void deleteUserPost(@PathVariable String id) {
+//    	
+//    	PersistenceManager pm = PMF.get().getPersistenceManager();
+//		Query q = pm.newQuery(UserPosts.class);
+//		q.setFilter("id == idParameter");
+//		q.declareParameters("String idParameter");
+//    	
+//    	try {
+//			List<User> results = (List<User>) q.execute(id);
+// 
+//			if (!results.isEmpty()) {
+//		        
+//				pm.deletePersistent(results.get(0));
+//	            
+//				
+//			} 
+//			
+//			
+//		} finally {
+//			q.closeAll();
+//			pm.close();
+//		}
+//    	
+//    }
+//    
     
 }

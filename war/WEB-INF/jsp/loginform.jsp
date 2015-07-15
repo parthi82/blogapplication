@@ -56,7 +56,7 @@
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-10">
                             <button type="submit" class="btn btn-primary">Login</button>
-                            <a href="/signupform" class="btn btn-link"> or Signup here</a>
+                            <a href="/signupform" class="btn btn-link"> or Signup here </a>
                         </div>
                     </div>
 

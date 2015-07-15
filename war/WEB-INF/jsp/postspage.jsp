@@ -21,6 +21,10 @@ $(document).ready(function(){
 </script>
 </head>
 <body>
+    
+    <a href="/profilepage"><Strong>Home</Strong></a>
+    <hr>
+    
     <% 
        
         if(request.getAttribute("posts") != null){
@@ -37,12 +41,11 @@ $(document).ready(function(){
         
          
          
-    <%
+     <%
     		   }
     	   }
-    	   
         }
-    %>  
+    %> 
     <br>
     <br>
     

@@ -8,7 +8,6 @@ import javax.jdo.annotations.PrimaryKey;
 
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Text;
 
 @PersistenceCapable
 public class UserPosts {
@@ -18,11 +17,9 @@ public class UserPosts {
 	@Persistent
 	private String title;
 	@Persistent
-    private Date date;
+    private Date dateOfCreation;
 	@Persistent
 	private String author;
-	@Persistent
-	private Text postTxt;
 	
     public Key getKey() {
 		return key;
@@ -41,12 +38,12 @@ public class UserPosts {
 		this.title = title;
 	}
 
-	public String getDate() {
-		return date.toString();
+	public long getDateOfCreation() {
+		return dateOfCreation.getTime();
 	}
 
-	public void setDate() {
-		date = new Date();
+	public void setDateOfCreation() {
+		dateOfCreation = new Date();
 	}
 
 	public String getAuthor() {
@@ -56,13 +53,5 @@ public class UserPosts {
 	public void setAuthor(String author) {
 		this.author = author;
 	}
-    
-    public String getpostTxt() {
-    	return postTxt.getValue();
-    }
-    
-    public void setPostTxt(String postTxt) {
-    	this.postTxt = new Text(postTxt);
-    }
-    
+ 
 }

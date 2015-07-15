@@ -21,17 +21,25 @@ public class PostHistory {
 	private String UserPostsKey;
   
 	@Persistent
-	private Date date;
+	private Date dateOfEdit;
 	
 	@Persistent
 	private String editor;
 
 	@Persistent
-	private Text txtBeforeEdit;
+	private Text postTxt;
 	
 	@Persistent
-	private Text txtAfterEdit;
+	private int version;
 	
+	public int getVersion() {
+		return version;
+	}
+
+	public void setVersion(int version) {
+		this.version = version;
+	}
+
 	public String getEditor() {
 		return editor;
 	}
@@ -40,9 +48,9 @@ public class PostHistory {
 		this.editor = editor;
 	}
 
-	public Key getKey() {
-		return key;
-	}
+//	public Key getKey() {
+//		return key;
+//	}
 
 	public void setKey() {
 		UUID uuid = UUID.randomUUID();
@@ -57,29 +65,20 @@ public class PostHistory {
 		this.UserPostsKey = UserPostsKey;
 	}
 
-	public String getDate() {
-		return date.toString();
+	public long getDateOfEdit() {
+		return dateOfEdit.getTime();
 	}
 
-	public void setDate() {
-		this.date = new Date();
+	public void setDateOfEdit() {
+		this.dateOfEdit = new Date();
 	}
 
-	public String getTxtBeforeEdit() {
-		return txtBeforeEdit.getValue();
+	public String getPostTxt() {
+		return postTxt.getValue();
 	}
 
-	public void setTxtBeforeEdit(String txtBeforeEdit) {
-		this.txtBeforeEdit = new Text(txtBeforeEdit);
+	public void setPostTxt(String postTxt) {
+		this.postTxt = new Text(postTxt);
 	}
-
-	public String getTxtAfterEdit() {
-		return txtAfterEdit.getValue();
-	}
-
-	public void setTxtAfterEdit(String txtAfterEdit) {
-		this.txtAfterEdit = new Text(txtAfterEdit);
-	}
-
 	
 }

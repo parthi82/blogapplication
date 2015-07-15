@@ -15,14 +15,18 @@
 
 </head>
 <body>
+ <span><a href="/profilepage"><strong>Home</strong></a></span>
+ <span><a href="/posts"><strong>View Posts</strong></a></span>
+ <hr>
 <a id="UserPostsKey" style="display:none"><%if(request.getAttribute("UserPostsKey") != null)out.print(request.getAttribute("UserPostsKey"));%></a>
    <table class="table table-hover">
 			<thead>
 			  <tr>
+				<th>Version</th>
 				<th>Date</th>
 				<th>Editor</th>
-				<th>Content Before Edit</th>
-				<th>Content After Edit</th>
+				<th>Content of the post</th>
+				<th>Action</th>
 			  </tr>
 			</thead>
 			<tbody id = "tbdy">
